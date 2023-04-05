@@ -1,0 +1,60 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.22"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "assign3_21405114",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "assign3_21405114::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-assign3_21405114-Debug-ad995abfc555a98a4e53.json",
+					"name" : "assign3_21405114",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/colmohaonghusa/Desktop/Comp Sci/Year 2/Semester 2/Unix Programming/Asses/Unix-Assign-3/assign3_21405114/cmake-build-debug",
+		"source" : "/Users/colmohaonghusa/Desktop/Comp Sci/Year 2/Semester 2/Unix Programming/Asses/Unix-Assign-3/assign3_21405114"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
