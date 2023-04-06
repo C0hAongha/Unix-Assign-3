@@ -1,3 +1,8 @@
+//
+// Created by Colm Ó hAonghusa  on 06/04/2023.
+// Student number: 21405114 email: colm.ohaonghusa@ucdconnect.ie
+//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +14,9 @@
 #include "QuizDB.h"
 
 #define BACKLOG 10
-#define BUFSIZE 32
+#define BUFSIZE 500
+
+int userStartQuiz(int cfd);
 
 int main(int argc, char *argv[]) {
     if (argc != 3)
@@ -30,8 +37,11 @@ int main(int argc, char *argv[]) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
 
-    if (getaddrinfo(argv[1], argv[1], &hints, &result) != 0)
+    int errnum;
+    if ((errnum = getaddrinfo(argv[1], argv[2], &hints, &result)) != 0) {
+        fprintf(stderr, "getaddrinfo: err num %d: %s\n", errnum, gai_strerror(errnum));
         exit(-1);
+    }
 
     int lfd, optval = 1;
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -55,7 +65,6 @@ int main(int argc, char *argv[]) {
     if (rp == NULL)
     {
         fprintf(stderr, "No socket to bind...\n");
-        perror(NULL);
         exit(-1);
     }
 
@@ -73,11 +82,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    freeaddrinfo(result);
+
+    if (listen(lfd, BACKLOG) == -1)
+        exit(-1);
+
+    fprintf(stdout, "<waiting for clients to connect>\n");
+    fprintf(stdout, "<ctrl-C to terminate>\n\n");
+
     //implement catch of ctrl+c so that program can try to exit itself
     while (1) {
-        fprintf(stdout, "<waiting for clients to connect>\n");
-        fprintf(stdout, "<ctrl-C to terminate>\n\n");
-
         struct sockaddr_storage claddr;
         socklen_t addrlen = sizeof(struct sockaddr_storage);
         int cfd = accept(lfd, (struct sockaddr *)&claddr, &addrlen);
@@ -99,8 +113,23 @@ int main(int argc, char *argv[]) {
 
         //quiz begins here...
 
+        int userPlay = userStartQuiz(cfd);
+
+        switch (userPlay) {
+            case 1:
+                //play quiz
+                break;
+            case 0:
+                //goto close and accept next connection
+                goto close_cfd;
+            case -1:
+                fprintf(stderr, "Invalid user input\n");
+                goto close_cfd;
+        }
+
         //quiz ends here...
 
+        close_cfd:
         if (close(cfd) == -1) /* Close connection */
         {
             fprintf(stderr, "close error.\n");
@@ -115,4 +144,61 @@ int main(int argc, char *argv[]) {
     }
 
     exit(EXIT_SUCCESS);
+}
+
+int userStartQuiz(int cfd) {
+    char* intro = "Welcome to Unix Programming Quiz!\n"
+                  "The quiz comprises five questions posed to you one after the other.\n"
+                  "You have only one attempt to answer a question.\n"
+                  "Your final score will be sent to you after conclusion of the quiz.\n"
+                  "To start the quiz, press Y and <enter>.\n"
+                  "To quit the quiz, press q and <enter>.\n";
+
+    size_t totWritten = 0;
+    const char* bufw = intro;
+    while (totWritten < BUFSIZE) {
+        ssize_t numWritten = write(cfd, bufw, BUFSIZE - totWritten);
+        if (numWritten <= 0) {
+            if (numWritten == -1 && errno == EINTR)
+                continue;
+            else {
+                //fprintf(stderr, "Write error.\n");
+                char* errstr = "write error";
+                perror(errstr);
+                exit(EXIT_FAILURE);
+            }
+        }
+        totWritten += numWritten;
+        bufw += numWritten;
+    }
+
+    char buf[BUFSIZE];
+    size_t totRead = 0;
+    char* bufr = buf;
+    while (totRead < BUFSIZE) {
+        ssize_t numRead = read(cfd, bufr, BUFSIZE - totRead);
+        if (numRead == 0)
+            break;
+        if (numRead == -1) {
+            if (errno == EINTR)
+                continue;
+            else {
+//                fprintf(stderr, "Read error.\n");
+                char* errstr = "read error";
+                perror(errstr);
+                exit(EXIT_FAILURE);
+            }
+        }
+        totRead += numRead;
+        bufr += numRead;
+    }
+
+    printf("Received %s\n", bufr);
+
+    if (strcasecmp(bufr, "Y") == 0)
+        return 1;
+    else if (strcasecmp(bufr, "q") == 0)
+        return 0;
+    else
+        return -1;
 }
