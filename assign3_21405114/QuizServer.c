@@ -3,6 +3,7 @@
 // Student number: 21405114 email: colm.ohaonghusa@ucdconnect.ie
 //
 
+#include <time.h>
 #include "SocketIO.h"
 #include "QuizDB.h"
 
@@ -126,6 +127,39 @@ int main(int argc, char *argv[]) {
                 goto close_cfd;
         }
 
+        unsigned int qIndex[5];
+        srandomdev();
+        for (int i = 0; i < 5; i++) {
+            qIndex[i] = random() % 43;
+            for (int j = 0; j < i; j++) {
+                if (i == j) {
+                    qIndex[i] = random() % 43;
+                    j = 0;
+                }
+            }
+        }
+
+        int score = 0;
+        for (int i = 0; i < 5; i++) {
+            socketWrite(cfd, QuizQ[qIndex[i]]);
+            char* answer = malloc(BUFSIZE * sizeof(char*));
+            socketRead(cfd, answer);
+
+            if (strcmp(answer, QuizA[qIndex[i]]) == 0) {
+                socketWrite(cfd, "Right Answer.");
+                score++;
+            } else {
+                char* sol = malloc(BUFSIZE * sizeof(char*));
+                snprintf(sol, BUFSIZE, "Wrong Answer. Right answer is %s.", QuizA[qIndex[i]]);
+                socketWrite(cfd, sol);
+            }
+        }
+
+        char* quizResult = malloc(BUFSIZE * sizeof(char*));
+        snprintf(quizResult, BUFSIZE, "Your quiz score is %d/5. Goodbye.", score);
+
+        socketWrite(cfd, quizResult);
+
         //quiz ends here...
 
         close_cfd:
@@ -158,7 +192,7 @@ int userStartQuiz(int cfd) {
     char* buf = malloc(BUFSIZE * sizeof(char*));
     socketRead(cfd, buf);
 
-    printf("Received %s\n", buf);
+    printf("%s\n", buf);
 
     if (strcasecmp(buf, "Y") == 0)
         return 1;

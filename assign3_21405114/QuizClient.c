@@ -57,18 +57,37 @@ int main(int argc, char* argv[]) {
 
     char* buf = malloc(BUFSIZE * sizeof(char*));
     socketRead(sfd, buf);
-    printf("Received %s\n", buf);
+    printf("%s\n>", buf);
 
     char* line = NULL;
     size_t linecap = 0;
     ssize_t linelen;
-
     linelen = getline(&line, &linecap, stdin);
     //check for trailing '/n'
     if (line[linelen - 1] == '\n') line[linelen - 1] = '\0';
 
     socketWrite(sfd, line);
 
+    for (int i = 0; i < 5; i++) {
+        socketRead(sfd, buf);
+        printf("%s\n>", buf);
+
+        line = NULL;
+        linecap = 0;
+        linelen = getline(&line, &linecap, stdin);
+        //check for trailing '/n'
+        if (line[linelen - 1] == '\n') line[linelen - 1] = '\0';
+
+        socketWrite(sfd, line);
+
+        //get answer
+        socketRead(sfd, buf);
+        printf("\n%s\n\n", buf);
+    }
+
+    //get final score
+    socketRead(sfd, buf);
+    printf("\n%s\n", buf);
 
     //quiz end...
 

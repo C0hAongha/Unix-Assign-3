@@ -25,7 +25,6 @@ void socketRead(int sfd, char* retBuf) {
         totRead += numRead;
         bufr += numRead;
     }
-    char buf2[BUFSIZE];
     strncpy(retBuf, buf, BUFSIZE * sizeof(char*));
 }
 
