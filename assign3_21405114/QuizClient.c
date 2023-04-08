@@ -88,12 +88,10 @@ int main(int argc, char* argv[]) {
     //check for trailing '/n'
     if (line[linelen - 1] == '\n') line[linelen - 1] = '\0';
 
-    size_t totWritten = 0;
+    size_t totWritten;
     const char* bufw = line;
-    printf("%s", bufw);
-
-    while (totWritten < linelen) {
-        ssize_t numWritten = write(cfd, bufw, linelen - totWritten);
+    for (totWritten = 0; totWritten < BUFSIZE; ) {
+        ssize_t numWritten = write(cfd, bufw, BUFSIZE - totWritten);
         if (numWritten <= 0) {
             if (numWritten == -1 && errno == EINTR)
                 continue;

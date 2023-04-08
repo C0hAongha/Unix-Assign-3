@@ -71,7 +71,6 @@ int main(int argc, char *argv[]) {
     {
         char host[NI_MAXHOST];
         char service[NI_MAXSERV];
-        int errnum;
         errnum = getnameinfo((struct sockaddr *) rp->ai_addr, rp->ai_addrlen,
                              host, NI_MAXHOST, service, NI_MAXSERV, 0);
         if (errnum == 0)
@@ -84,8 +83,11 @@ int main(int argc, char *argv[]) {
 
     freeaddrinfo(result);
 
-    if (listen(lfd, BACKLOG) == -1)
-        exit(-1);
+    if (listen(lfd, BACKLOG) == -1) {
+        char* errstr = "listen error";
+        perror(errstr);
+        exit(EXIT_FAILURE);
+    }
 
     fprintf(stdout, "<waiting for clients to connect>\n");
     fprintf(stdout, "<ctrl-C to terminate>\n\n");
@@ -118,9 +120,11 @@ int main(int argc, char *argv[]) {
         switch (userPlay) {
             case 1:
                 //play quiz
+                printf("play\n");
                 break;
             case 0:
                 //goto close and accept next connection
+                printf("close\n");
                 goto close_cfd;
             case -1:
                 fprintf(stderr, "Invalid user input\n");
@@ -173,9 +177,10 @@ int userStartQuiz(int cfd) {
     }
 
     char buf[BUFSIZE];
-    size_t totRead = 0;
+    memset(buf, '\0', BUFSIZE);
+    size_t totRead;
     char* bufr = buf;
-    while (totRead < BUFSIZE) {
+    for (totRead = 0; totRead < BUFSIZE; ) {
         ssize_t numRead = read(cfd, bufr, BUFSIZE - totRead);
         if (numRead == 0)
             break;
@@ -183,7 +188,6 @@ int userStartQuiz(int cfd) {
             if (errno == EINTR)
                 continue;
             else {
-//                fprintf(stderr, "Read error.\n");
                 char* errstr = "read error";
                 perror(errstr);
                 exit(EXIT_FAILURE);
@@ -193,11 +197,11 @@ int userStartQuiz(int cfd) {
         bufr += numRead;
     }
 
-    printf("Received %s\n", bufr);
+    printf("Received %s\n", buf);
 
-    if (strcasecmp(bufr, "Y") == 0)
+    if (strcasecmp(buf, "Y") == 0)
         return 1;
-    else if (strcasecmp(bufr, "q") == 0)
+    else if (strcasecmp(buf, "q") == 0)
         return 0;
     else
         return -1;
