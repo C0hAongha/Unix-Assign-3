@@ -3,18 +3,10 @@
 // Student number: 21405114 email: colm.ohaonghusa@ucdconnect.ie
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <signal.h>
-#include <errno.h>
+#include "SocketIO.h"
 #include "QuizDB.h"
 
 #define BACKLOG 10
-#define BUFSIZE 500
 
 int userStartQuiz(int cfd);
 
@@ -52,8 +44,11 @@ int main(int argc, char *argv[]) {
             continue;   /* On error, try next address */
 
         if (setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR,
-                       &optval, sizeof(optval)) == -1)
+                       &optval, sizeof(optval)) == -1) {
+            char* errstr = "setsockopt error";
+            perror(errstr);
             exit(-1);
+        }
 
         if (bind(lfd, rp->ai_addr, rp->ai_addrlen) == 0)
             break; /* Success */
@@ -86,7 +81,7 @@ int main(int argc, char *argv[]) {
     if (listen(lfd, BACKLOG) == -1) {
         char* errstr = "listen error";
         perror(errstr);
-        exit(EXIT_FAILURE);
+        exit(-1);
     }
 
     fprintf(stdout, "<waiting for clients to connect>\n");
@@ -158,44 +153,10 @@ int userStartQuiz(int cfd) {
                   "To start the quiz, press Y and <enter>.\n"
                   "To quit the quiz, press q and <enter>.\n";
 
-    size_t totWritten = 0;
-    const char* bufw = intro;
-    while (totWritten < BUFSIZE) {
-        ssize_t numWritten = write(cfd, bufw, BUFSIZE - totWritten);
-        if (numWritten <= 0) {
-            if (numWritten == -1 && errno == EINTR)
-                continue;
-            else {
-                //fprintf(stderr, "Write error.\n");
-                char* errstr = "write error";
-                perror(errstr);
-                exit(EXIT_FAILURE);
-            }
-        }
-        totWritten += numWritten;
-        bufw += numWritten;
-    }
+    socketWrite(cfd, intro);
 
-    char buf[BUFSIZE];
-    memset(buf, '\0', BUFSIZE);
-    size_t totRead;
-    char* bufr = buf;
-    for (totRead = 0; totRead < BUFSIZE; ) {
-        ssize_t numRead = read(cfd, bufr, BUFSIZE - totRead);
-        if (numRead == 0)
-            break;
-        if (numRead == -1) {
-            if (errno == EINTR)
-                continue;
-            else {
-                char* errstr = "read error";
-                perror(errstr);
-                exit(EXIT_FAILURE);
-            }
-        }
-        totRead += numRead;
-        bufr += numRead;
-    }
+    char* buf = malloc(BUFSIZE * sizeof(char*));
+    socketRead(cfd, buf);
 
     printf("Received %s\n", buf);
 

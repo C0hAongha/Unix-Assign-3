@@ -3,16 +3,7 @@
 // Student number: 21405114 email: colm.ohaonghusa@ucdconnect.ie
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <signal.h>
-#include <errno.h>
-
-#define BUFSIZE 500
+#include "SocketIO.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 3)
@@ -33,22 +24,25 @@ int main(int argc, char* argv[]) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_NUMERICSERV;
 
-    if (getaddrinfo(argv[1], argv[2], &hints, &result) != 0)
+    int errnum;
+    if ((errnum = getaddrinfo(argv[1], argv[2], &hints, &result)) != 0) {
+        fprintf(stderr, "getaddrinfo: err num %d: %s\n", errnum, gai_strerror(errnum));
         exit(-1);
+    }
 
-    int cfd;
+    int sfd;
     for (rp = result; rp != NULL; rp = rp->ai_next) {
-        cfd = socket(rp->ai_family, rp->ai_socktype,
+        sfd = socket(rp->ai_family, rp->ai_socktype,
                      rp->ai_protocol);
 
-        if (cfd == -1)
+        if (sfd == -1)
             continue;   /* On error, try next address */
 
-        if (connect(cfd, rp->ai_addr, rp->ai_addrlen) != -1)
+        if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
             break; /* Success */
 
         /* close() failed, close this socket, try next address */
-        close(cfd);
+        close(sfd);
     }
 
     if (rp == NULL)
@@ -61,23 +55,8 @@ int main(int argc, char* argv[]) {
 
     //quiz start...
 
-    char buf[BUFSIZE];
-    size_t totRead;
-    char* bufr = buf;
-    for (totRead = 0; totRead < BUFSIZE; ) {
-        ssize_t numRead = read(cfd, bufr, BUFSIZE - totRead);
-        if (numRead == 0)
-            break;
-        if (numRead == -1) {
-            if (errno == EINTR)
-                continue;
-            else {
-                fprintf(stderr, "Read error, Errno %d.\n", errno);
-            }
-        }
-        totRead += numRead;
-        bufr += numRead;
-    }
+    char* buf = malloc(BUFSIZE * sizeof(char*));
+    socketRead(sfd, buf);
     printf("Received %s\n", buf);
 
     char* line = NULL;
@@ -88,27 +67,15 @@ int main(int argc, char* argv[]) {
     //check for trailing '/n'
     if (line[linelen - 1] == '\n') line[linelen - 1] = '\0';
 
-    size_t totWritten;
-    const char* bufw = line;
-    for (totWritten = 0; totWritten < BUFSIZE; ) {
-        ssize_t numWritten = write(cfd, bufw, BUFSIZE - totWritten);
-        if (numWritten <= 0) {
-            if (numWritten == -1 && errno == EINTR)
-                continue;
-            else {
-                fprintf(stderr, "Write error. Errno %d.\n", errno);
-            }
-        }
-        totWritten += numWritten;
-        bufw += numWritten;
-    }
+    socketWrite(sfd, line);
 
 
     //quiz end...
 
-    if (close(cfd) == -1) /* Close connection */
+    if (close(sfd) == -1) /* Close connection */
     {
-        fprintf(stderr, "close error.\n");
+        char* errstr = "close error";
+        perror(errstr);
         exit(EXIT_FAILURE);
     }
 
