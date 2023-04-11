@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
                 //goto close and accept next connection
                 printf("close\n");
                 goto close_cfd;
-            case -1:
+            default:
                 fprintf(stderr, "Invalid user input\n");
                 goto close_cfd;
         }
@@ -169,14 +169,6 @@ int main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
     }
-
-    if (close(lfd) == -1) /* Close listening socket */
-    {
-        fprintf(stderr, "close error.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    exit(EXIT_SUCCESS);
 }
 
 int userStartQuiz(int cfd) {
