@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
         }
 
         unsigned int qIndex[5];
-        srandomdev();
+        srandom(time(NULL));
         for (int i = 0; i < 5; i++) {
             qIndex[i] = random() % 43;
             for (int j = 0; j < i; j++) {

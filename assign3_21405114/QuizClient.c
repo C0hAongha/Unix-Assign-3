@@ -68,6 +68,9 @@ int main(int argc, char* argv[]) {
 
     socketWrite(sfd, line);
 
+    if (strcasecmp(line, "q") == 0)
+        goto close_sfd;
+
     for (int i = 0; i < 5; i++) {
         socketRead(sfd, buf);
         printf("%s\n>", buf);
@@ -91,6 +94,7 @@ int main(int argc, char* argv[]) {
 
     //quiz end...
 
+    close_sfd:
     if (close(sfd) == -1) /* Close connection */
     {
         char* errstr = "close error";
