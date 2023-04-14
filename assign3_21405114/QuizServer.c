@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
             char* answer = malloc(BUFSIZE * sizeof(char*));
             socketRead(cfd, answer);
 
-            if (strcmp(answer, QuizA[qIndex[i]]) == 0) {
+            if (strcasecmp(answer, QuizA[qIndex[i]]) == 0) {
                 socketWrite(cfd, "Right Answer.");
                 score++;
             } else {
